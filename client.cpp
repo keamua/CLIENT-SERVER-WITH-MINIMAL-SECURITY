@@ -1,5 +1,3 @@
-
-
 /*
 author:朱一鸣
 date:2021/05/21
@@ -38,12 +36,9 @@ using namespace std;
 
 #define DATA		(short int)7
 
-
 #define ENC 1
 #define DEC 0
 DES_key_schedule key;
-
-
 
 // 四种包结构体：登录、密码、结束和数据
 struct PKT_LOG{
@@ -160,7 +155,7 @@ int mk_digest(char* path, unsigned char *digest){
 
 	//int i;
 	//unsigned char rbuff[]="SHA-1 Clear Text";
-	//unsigned char wbuff[20];
+	unsigned char wbuff[20];
 	SHA_CTX	c;
 
 	char *buffer = NULL;
@@ -184,17 +179,18 @@ int mk_digest(char* path, unsigned char *digest){
 	SHA1_Init(&c);
 	while((bytes_read = fread(buffer, 1, bufsize, inpfile)))
 		SHA1_Update(&c, buffer, bytes_read);
-	SHA1_Final(digest,&c);
+	SHA1_Final(wbuff,&c);
 
 	//printf("Clear text: %s\n",rbuff);
 	printf("SHA-1 digest:");
 	for (int i=0;i<sizeof(digest);i++)
-		printf("%x",digest[i]);
+		printf("%x",wbuff[i]);
 	printf("\n");
 
 	fclose(inpfile);
 	free(buffer);
 
+	memcpy(digest,wbuff,20);
 	return 0;
 }
 
@@ -268,7 +264,7 @@ int main(int argc, char* argv[])
 	char *recvBuf = (char*)malloc(1010); 
 	char *sendBuf = (char*)malloc(1010); 
 	FILE *recvFile = fopen("decfile.txt","wb");
-	FILE *sendFile = fopen("test.txt","rb");
+	FILE *sendFile;// = fopen("test.txt","rb");
 	char *password = "thisispasswordandyouarewrite";
 	int len = sizeof(SOCKADDR); 
 	int ret;
@@ -287,7 +283,7 @@ int main(int argc, char* argv[])
 	//发送JOIN_REQ
 	sendto(sockCli, sendBuf, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 	//接受PASS_REQ
-	while( ret = recvfrom(sockCli, recvBuf, 6, 0, (SOCKADDR*)&addrSrv, &len)){
+	while( ret = recvfrom(sockCli, recvBuf, 1010, 0, (SOCKADDR*)&addrSrv, &len)){
 		//发送PASS_RESP
 		switch(recvBuf[0] - 48 ){
 		case JOIN_REQ:{
@@ -298,7 +294,8 @@ int main(int argc, char* argv[])
 			break;
 		case PASS_REQ:{
 			PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
-			char *pwd = (char*)malloc(50);
+			//char *pwd = (char*)malloc(50);
+			char *pwd = "thisispasswordandyouarewrite";
 			sendBuf = mk_pkt_pwd(pwd,pass_resp);
 			sendto(sockCli, sendBuf, 6 + strlen(sendBuf+6), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 					  }//接收PASS_ACCEPT
@@ -314,7 +311,8 @@ int main(int argc, char* argv[])
 			}
 			else{
 				PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
-				char *pwd = (char*)malloc(50);
+				//char *pwd = (char*)malloc(50);
+				char *pwd = "thisispasswordandyouarewrite";
 				sendBuf = mk_pkt_pwd(pwd,pass_resp);
 				sendto(sockCli, sendBuf, 6 + strlen(sendBuf+6), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 			}
