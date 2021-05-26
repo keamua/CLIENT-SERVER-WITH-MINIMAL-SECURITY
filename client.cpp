@@ -20,9 +20,8 @@ using namespace std;
 #include <stdio.h>
 #include <memory.h>
 
-#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\课件\\大三下\\算法协议\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib") 
-#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\课件\\大三下\\算法协议\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib")
-
+#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib") 
+#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib")
 
 
 #define READ_SIZE 32768
@@ -134,7 +133,7 @@ PKT_END dmk_pkt_end(char data[]){
 //带有数据的包
 
 char* mk_pkt_data(char data[],PKT_DATA pkt,int id){
-	char Pkt[1006];
+	char Pkt[1010];
 	pkt.Header = DATA;
 	pkt.Payload = sizeof(data);
 	pkt.pkt_id = id;
@@ -266,6 +265,8 @@ int main(int argc, char* argv[])
 	addrSrv.sin_addr.S_un.S_addr = inet_addr("127.0.0.1"); //服务器假设为本机
 	char *recvBuf; 
 	char *sendBuf; 
+	FILE *recvFile;
+	FILE *sendFile;
 	char *password = "thisispasswordandyouarewrite";
 	int len = sizeof(SOCKADDR); 
 	int ret;
@@ -328,10 +329,23 @@ int main(int argc, char* argv[])
 				PKT_LOG pass_accept;
 				sendBuf = mk_pkt_log(pass_accept,PASS_ACCEPT);
 				sendto(sockCli, sendBuf, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
-
-
-
-
+				int count;
+				char mdata[1000];
+				char encdata[1000];
+				int id = 1;
+				while ((count = fread(mdata, 1, 1000, sendFile)) > 0){
+					PKT_DATA pkt_data;	
+					dataenc(mdata,encdata,IV);
+					sendBuf = mk_pkt_data(encdata,pkt_data,id);
+					sendto(sockCli, sendBuf, 1010, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
+					id ++;
+				}
+				//结束时发送摘要
+				char* path; unsigned char *digest;
+				mk_digest(path,digest);
+				PKT_END pkt_end;
+				sendBuf = mk_pkt_end((char *)digest,pkt_end);
+				sendto(sockCli,sendBuf,strlen(sendBuf)+1,0,(SOCKADDR*)&addrSrv,len); 
 			}
 			if(passcount > 3){
 				printf("连续三次输错密码，服务器关闭\n");
@@ -351,32 +365,12 @@ int main(int argc, char* argv[])
 				printf("接受到正确的文件\n");
 			}
 			break;
-
-			recvfrom(sockCli, recvBuf, 6, 0, (SOCKADDR*)&addrSrv, &len);
-
-			FILE * recfile = fopen("1.jpg","wb");
-			//接收DATA
-			while(recvfrom(sockCli, recvBuf, 1006, 0, (SOCKADDR*)&addrSrv, &len) != SOCKET_ERROR){
-	
-			}
 		case DATA:
-
-
-
-
-			//结束时发送摘要
-			char* path; unsigned char *digest;
-			mk_digest(path,digest);
-			PKT_END pkt_end;
-			sendBuf = mk_pkt_end((char *)digest,pkt_end);
-			sendto(sockCli,sendBuf,strlen(sendBuf)+1,0,(SOCKADDR*)&addrSrv,len); 
-			//发送给服务器
-			recvfrom(sockCli,recvBuf,strlen(recvBuf)+1,0,(SOCKADDR*)&addrSrv,&len); 
-			//接收服务器的应答
-			if(recvBuf[0] != 0) {
-				printf("response from sever:%s, IP is %s",recvBuf,inet_ntoa(addrSrv.sin_addr)); 
-			} 
-
+			PKT_DATA pkt_data = dmk_pkt_data(recvBuf);
+			char decdata[1000];
+			datadec(pkt_data.Data,decdata,IV);
+			fwrite(decdata,1,pkt_data.Payload,recvFile);
+			break;
 		}
 	}
 	closesocket(sockCli);
