@@ -1,7 +1,7 @@
 /*
-author:ÖìÒ»Ãù
+author:æœ±ä¸€é¸£
 date:2021/05/21
-description:Î¢ĞÍ°²È«Ğ­ÒéµÄ¿Í»§¶Ë³ÌĞò
+description:å¾®å‹å®‰å…¨åè®®çš„å®¢æˆ·ç«¯ç¨‹åº
 */
 
 #include <iostream>
@@ -20,13 +20,13 @@ using namespace std;
 #include <stdio.h>
 #include <memory.h>
 
-#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\¿Î¼ş\\´óÈıÏÂ\\Ëã·¨Ğ­Òé\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib") 
-#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\¿Î¼ş\\´óÈıÏÂ\\Ëã·¨Ğ­Òé\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib")
+#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\è¯¾ä»¶\\å¤§ä¸‰ä¸‹\\ç®—æ³•åè®®\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib") 
+#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\è¯¾ä»¶\\å¤§ä¸‰ä¸‹\\ç®—æ³•åè®®\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib")
 
 
 
 #define READ_SIZE 32768
-// ÆßÖÖÊı¾İ°ü
+// ä¸ƒç§æ•°æ®åŒ…
 #define JOIN_REQ	(short int)1
 #define PASS_REQ	(short int)2
 #define PASS_ACCEPT	(short int)3
@@ -44,7 +44,7 @@ DES_key_schedule key;
 
 
 
-// ËÄÖÖ°ü½á¹¹Ìå£ºµÇÂ¼¡¢ÃÜÂë¡¢½áÊøºÍÊı¾İ
+// å››ç§åŒ…ç»“æ„ä½“ï¼šç™»å½•ã€å¯†ç ã€ç»“æŸå’Œæ•°æ®
 struct PKT_LOG{
 	short int Header;
 	int Payload;
@@ -67,7 +67,7 @@ struct PKT_DATA{
 };
 
 
-// ×Ö·û´®×ªintÓÃÀ´È¡payload
+// å­—ç¬¦ä¸²è½¬intç”¨æ¥å–payload
 int str2int(char *str){
 	int number = 0;
 	for (int i=0; *(str+i)!='\0' && i<4; i++) {
@@ -77,7 +77,7 @@ int str2int(char *str){
 	return number;
 }
 
-// µÇÂ¼¼ì²éÃÜÂëÓĞ¹ØµÄ°üµÄmakeºÍdemake
+// ç™»å½•æ£€æŸ¥å¯†ç æœ‰å…³çš„åŒ…çš„makeå’Œdemake
 char* mk_pkt_log(PKT_LOG pkt,short int header){
 	pkt.Header = header;
 	pkt.Payload = 0;
@@ -94,7 +94,7 @@ PKT_LOG dmk_pkt_log(char data[]){
 	return pkt;
 }
 
-// ´øÓĞÃÜÂëµÄ°ü
+// å¸¦æœ‰å¯†ç çš„åŒ…
 char* mk_pkt_pwd(char pwd[],PKT_PWD pkt){
 	char Pkt[56];
 	pkt.Header = PASS_RESP;
@@ -112,7 +112,7 @@ PKT_PWD dmk_pkt_pwd(char data[]){
 	return pkt;
 }
 
-// ´øÓĞ½áÊøĞÅÏ¢µÄ°ü
+// å¸¦æœ‰ç»“æŸä¿¡æ¯çš„åŒ…
 char* mk_pkt_end(char *digest,PKT_END pkt){
 	char Pkt[26];
 	pkt.Header = TERMINATE;
@@ -131,7 +131,7 @@ PKT_END dmk_pkt_end(char data[]){
 	return pkt;
 }
 
-//´øÓĞÊı¾İµÄ°ü
+//å¸¦æœ‰æ•°æ®çš„åŒ…
 
 char* mk_pkt_data(char data[],PKT_DATA pkt,int id){
 	char Pkt[1006];
@@ -197,42 +197,55 @@ int mk_digest(char* path, unsigned char *digest){
 	return 0;
 }
 
-// °ÑÒ»¸öÎŞ·ûºÅ×Ö·û´®¸´ÖÆµ½ÁíÒ»¸ö×Ö·û´®
+// æŠŠä¸€ä¸ªæ— ç¬¦å·å­—ç¬¦ä¸²å¤åˆ¶åˆ°å¦ä¸€ä¸ªå­—ç¬¦ä¸²
 void copyValue(const_DES_cblock val1, unsigned char *val2, int size) {
     for(int i=0; i<size; i++) {
         val2[i] = val1[i];
     }
 }
 
-// ÓÃÁ½¸öÎŞ·ûºÅ³¤×Ö·û£¨4×Ö½Ú£©£¬¶ÔÉÏ´Î¼ÓÃÜ½á¹ûºÍÕâ´ÎµÄÃ÷ÎÄdata½øĞĞÒì»ò
+// ç”¨ä¸¤ä¸ªæ— ç¬¦å·é•¿å­—ç¬¦ï¼ˆ4å­—èŠ‚ï¼‰ï¼Œå¯¹ä¸Šæ¬¡åŠ å¯†ç»“æœå’Œè¿™æ¬¡çš„æ˜æ–‡dataè¿›è¡Œå¼‚æˆ–
 void LongXor(DES_LONG *xor, DES_LONG* data, const_DES_cblock iv) {
     DES_LONG temp[2];
-    memcpy(temp, iv, 8*sizeof(unsigned char));	// ×ª»»³ÉÏàÍ¬µÄÀàĞÍ
+    memcpy(temp, iv, 8*sizeof(unsigned char));	// è½¬æ¢æˆç›¸åŒçš„ç±»å‹
     for(int i=0; i<2; i++) {
         xor[i] = temp[i] ^ data[i];
     }
 }
 
-void dataenc(FILE *inpFile,FILE *outFile,const_DES_cblock IV){
+void dataenc(char *mdata, char *encdata, const_DES_cblock IV){
 	const_DES_cblock iv ;
 	copyValue(IV,iv,sizeof(const_DES_cblock));
-	DES_LONG data[2] = {0,0},temp[2] = {0,0}; // dataÓÃÀ´´¢´æÃ¿´Î¶ÁÈ¡µÄ8×Ö½Ú64±ÈÌØµÄÊı¾İ£¬tempÓÃÀ´´¢´æ¼ÓÃÜºóµÄÊı¾İ
-	int mRead = fread(data, 1, 8, inpFile); // ´ÓÃ÷ÎÄÖĞ¶ÁÈ¡8×Ö½ÚµÄÊı¾İ
-	while(mRead > 0){ // µ±ÄÜ¹»´ÓÃ÷ÎÄÖĞ¶Áµ½Êı¾İµÄÊ±ºò
-		LongXor(temp, data, iv); // ÏÈ½«Êı¾İºÍivÒì»ò
-		DES_encrypt1(temp,&key,ENC); // Òì»òµÄ½á¹û½øĞĞ¼ÓÃÜ
-		fwrite(temp, 8, 1, outFile); // ½«¼ÓÃÜµÄ½á¹ûĞ´µ½ÃÜÎÄÖĞ
-		memcpy(iv, temp, 2*sizeof(DES_LONG)); // ½«¼ÓÃÜµÄ½á¹û×÷ÎªÏÂÒ»´ÎµÄiv½øĞĞÒì»ò
-		data[0]=0;data[1]=0; // ÓÃ0Ìî³ädata
-		mRead = fread(data, 1, 8, inpFile);
+	DES_LONG data[2] = {0,0},temp[2] = {0,0};
+	for( int i = 0;i<strlen(mdata);i = i+8){
+		memcpy(data, mdata + i, 8);
+		LongXor(temp, data, iv);
+		DES_encrypt1(temp,&key,ENC);
+		memcpy(encdata + i,temp,8);
+		memcpy(iv, temp, 2*sizeof(DES_LONG));
+		data[0]=0;data[1]=0;
 	}
-	printf("¼ÓÃÜÍê³É\n");	//¼ÓÃÜÍê³É
+}
+
+void datadec(char *cdata, char *decdata, const_DES_cblock IV){
+	const_DES_cblock iv ;
+	copyValue(IV,iv,sizeof(const_DES_cblock));
+	DES_LONG data[2] = {0,0},temp1[2],temp2[2];
+	for(int i=0;i<sizeof(cdata)+8;i=i+8){
+		memcpy(data,cdata + i,8);
+		memcpy(temp1, data, 2*sizeof(DES_LONG));
+		DES_encrypt1(data,&key,DEC);
+		LongXor(temp2, data, iv);
+		memcpy(decdata + i ,temp2,8);
+		memcpy(iv, temp1, 2*sizeof(DES_LONG)); 
+		data[0]=0;data[1]=0; 
+	}
 }
 
 
 int main(int argc, char* argv[])
 { 
-	// ÉèÖÃsocketÓĞ¹ØĞÅÏ¢
+	// è®¾ç½®socketæœ‰å…³ä¿¡æ¯
 	WORD wVersionRequested; 
 	WSADATA wsaData; 
 	int err; 
@@ -249,8 +262,8 @@ int main(int argc, char* argv[])
 	SOCKET sockCli = socket(AF_INET,SOCK_DGRAM,0); 
 	SOCKADDR_IN addrSrv; 
 	addrSrv.sin_family = AF_INET; 
-	addrSrv.sin_port = htons(5050); //¶Ë¿ÚºÅ
-	addrSrv.sin_addr.S_un.S_addr = inet_addr("127.0.0.1"); //·şÎñÆ÷¼ÙÉèÎª±¾»ú
+	addrSrv.sin_port = htons(5050); //ç«¯å£å·
+	addrSrv.sin_addr.S_un.S_addr = inet_addr("127.0.0.1"); //æœåŠ¡å™¨å‡è®¾ä¸ºæœ¬æœº
 	char *recvBuf; 
 	char *sendBuf; 
 	char *password = "thisispasswordandyouarewrite";
@@ -262,17 +275,17 @@ int main(int argc, char* argv[])
 	const_DES_cblock cbc_key = {0x40,0xfe,0xdf,0x38,0x6d,0xa1,0x3d,0x57};
 	const_DES_cblock IV = {0xfe,0xdc,0xba,0x98,0x76,0x54,0x32,0x10};
 	if ((keycheck = DES_set_key_checked(&cbc_key,&key)) != 0)
-			{printf("\nÉú³ÉÃÜÔ¿²»·ûºÏÒªÇó£¡\n");return 0;}
+			{printf("\nç”Ÿæˆå¯†é’¥ä¸ç¬¦åˆè¦æ±‚ï¼\n");return 0;}
 
-	cout << "·¢ËÍÁ¬½ÓÇëÇó......" << endl;
+	cout << "å‘é€è¿æ¥è¯·æ±‚......" << endl;
 
 	PKT_LOG join_req;
 	sendBuf = mk_pkt_log(join_req,JOIN_REQ); 
-	//·¢ËÍJOIN_REQ
+	//å‘é€JOIN_REQ
 	sendto(sockCli, sendBuf, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
-	//½ÓÊÜPASS_REQ
+	//æ¥å—PASS_REQ
 	while( ret = recvfrom(sockCli, recvBuf, 6, 0, (SOCKADDR*)&addrSrv, &len)){
-		//·¢ËÍPASS_RESP
+		//å‘é€PASS_RESP
 		switch(recvBuf[0] - 48 ){
 		case JOIN_REQ:
 			PKT_LOG pass_req;
@@ -283,35 +296,35 @@ int main(int argc, char* argv[])
 			PKT_PWD pass_resp; char *pwd;
 			sendBuf = mk_pkt_pwd(pwd,pass_resp);
 			sendto(sockCli, sendBuf, 6 + strlen(sendBuf+6), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
-			//½ÓÊÕPASS_ACCEPT
+			//æ¥æ”¶PASS_ACCEPT
 			break;
 		case PASS_ACCEPT:
-			printf("ÃÜÂëÑéÖ¤Í¨¹ı£¬¿ªÊ¼½ÓÊÜÎÄ¼ş¡­¡­\n");
+			printf("å¯†ç éªŒè¯é€šè¿‡ï¼Œå¼€å§‹æ¥å—æ–‡ä»¶â€¦â€¦\n");
 			break;
 		case REJECT:
 			passcount++;
 			if(passcount > 3){
-				printf("Èı´ÎÃÜÂë¾ùÊ§°Ü£¬¶Ï¿ªÁ¬½Ó¡­¡­\n");
+				printf("ä¸‰æ¬¡å¯†ç å‡å¤±è´¥ï¼Œæ–­å¼€è¿æ¥â€¦â€¦\n");
 			}
 			else{
 				PKT_PWD pass_resp; char *pwd;
 				sendBuf = mk_pkt_pwd(pwd,pass_resp);
 				sendto(sockCli, sendBuf, 6 + strlen(sendBuf+6), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 			}
-			//½ÓÊÕPASS_ACCEPT
+			//æ¥æ”¶PASS_ACCEPT
 			break;
 		case PASS_RESP:
 			PKT_PWD pkt_pwd;
 			pkt_pwd = dmk_pkt_pwd(recvBuf);
 			if(strcmp(password,pkt_pwd.PWD)){
-				printf("ÃÜÂë´íÎó£¬ÇëÖØĞÂÊäÈë\n");
+				printf("å¯†ç é”™è¯¯ï¼Œè¯·é‡æ–°è¾“å…¥\n");
 				passcount ++;
 				PKT_LOG reject;
 				sendBuf = mk_pkt_log(reject,REJECT);
 				sendto(sockCli, sendBuf, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 			}
 			else{
-				printf("ÃÜÂëÕıÈ·£¬¿ªÊ¼·¢ËÍÊı¾İ\n");
+				printf("å¯†ç æ­£ç¡®ï¼Œå¼€å§‹å‘é€æ•°æ®\n");
 				PKT_LOG pass_accept;
 				sendBuf = mk_pkt_log(pass_accept,PASS_ACCEPT);
 				sendto(sockCli, sendBuf, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
@@ -321,7 +334,7 @@ int main(int argc, char* argv[])
 
 			}
 			if(passcount > 3){
-				printf("Á¬ĞøÈı´ÎÊä´íÃÜÂë£¬·şÎñÆ÷¹Ø±Õ\n");
+				printf("è¿ç»­ä¸‰æ¬¡è¾“é”™å¯†ç ï¼ŒæœåŠ¡å™¨å…³é—­\n");
 				closesocket(sockCli);
 				WSACleanup(); 
 				return 0;
@@ -332,17 +345,17 @@ int main(int argc, char* argv[])
 			mk_digest(decfilepath,decfiledigest);
 			PKT_END terminate = dmk_pkt_end(recvBuf);
 			if(strcmp((char *)decfiledigest,terminate.Digest)){
-				printf("½âÃÜÎÄ¼şµÄÕªÒªºÍ´«Êä¹ıÀ´µÄ²»Í¬\n");
+				printf("è§£å¯†æ–‡ä»¶çš„æ‘˜è¦å’Œä¼ è¾“è¿‡æ¥çš„ä¸åŒ\n");
 			}
 			else{
-				printf("½ÓÊÜµ½ÕıÈ·µÄÎÄ¼ş\n");
+				printf("æ¥å—åˆ°æ­£ç¡®çš„æ–‡ä»¶\n");
 			}
 			break;
 
 			recvfrom(sockCli, recvBuf, 6, 0, (SOCKADDR*)&addrSrv, &len);
 
 			FILE * recfile = fopen("1.jpg","wb");
-			//½ÓÊÕDATA
+			//æ¥æ”¶DATA
 			while(recvfrom(sockCli, recvBuf, 1006, 0, (SOCKADDR*)&addrSrv, &len) != SOCKET_ERROR){
 	
 			}
@@ -351,15 +364,15 @@ int main(int argc, char* argv[])
 
 
 
-			//½áÊøÊ±·¢ËÍÕªÒª
+			//ç»“æŸæ—¶å‘é€æ‘˜è¦
 			char* path; unsigned char *digest;
 			mk_digest(path,digest);
 			PKT_END pkt_end;
 			sendBuf = mk_pkt_end((char *)digest,pkt_end);
 			sendto(sockCli,sendBuf,strlen(sendBuf)+1,0,(SOCKADDR*)&addrSrv,len); 
-			//·¢ËÍ¸ø·şÎñÆ÷
+			//å‘é€ç»™æœåŠ¡å™¨
 			recvfrom(sockCli,recvBuf,strlen(recvBuf)+1,0,(SOCKADDR*)&addrSrv,&len); 
-			//½ÓÊÕ·şÎñÆ÷µÄÓ¦´ğ
+			//æ¥æ”¶æœåŠ¡å™¨çš„åº”ç­”
 			if(recvBuf[0] != 0) {
 				printf("response from sever:%s, IP is %s",recvBuf,inet_ntoa(addrSrv.sin_addr)); 
 			} 
