@@ -36,9 +36,12 @@ using namespace std;
 
 #define DATA		(short int)7
 
+
 #define ENC 1
 #define DEC 0
 DES_key_schedule key;
+
+
 
 // 四种包结构体：登录、密码、结束和数据
 struct PKT_LOG{
@@ -53,7 +56,7 @@ struct PKT_PWD{
 struct PKT_END{
 	short int Header;
 	int Payload;
-	char Digest[20];
+	unsigned char Digest[20];
 };
 struct PKT_DATA{
 	short int Header;
@@ -94,10 +97,10 @@ PKT_LOG dmk_pkt_log(char data[]){
 char* mk_pkt_pwd(char pwd[],PKT_PWD *pkt){
 	char Pkt[56];
 	pkt->Header = PASS_RESP;
-	pkt->Payload = sizeof(pwd);
+	pkt->Payload = strlen(pwd);
 	sprintf(Pkt ,"%d", pkt->Header);
 	sprintf(Pkt+2,"%d",pkt->Payload);
-	memcpy(Pkt+6,pwd,strlen(pwd)+1);
+	memcpy(Pkt+6,pwd,strlen(pwd));
 	return Pkt;
 }
 PKT_PWD dmk_pkt_pwd(char data[]){
@@ -109,11 +112,12 @@ PKT_PWD dmk_pkt_pwd(char data[]){
 }
 
 // 带有结束信息的包
-char* mk_pkt_end(char *digest,PKT_END *pkt){
+char* mk_pkt_end(unsigned char *digest,PKT_END *pkt){
 	char Pkt[26];
 	pkt->Header = TERMINATE;
 	pkt->Payload = 20;
 	memcpy(pkt->Digest,digest,20);
+
 	sprintf(Pkt ,"%d", pkt->Header);
 	sprintf(Pkt+2,"%d",pkt->Payload);
 	memcpy(Pkt+6,digest,20);
@@ -122,8 +126,8 @@ char* mk_pkt_end(char *digest,PKT_END *pkt){
 PKT_END dmk_pkt_end(char data[]){
 	PKT_END pkt;
 	pkt.Header = (short int)data[0]-48;
-	pkt.Payload = str2int(data+2);
-	memcpy(pkt.Digest,data+6,pkt.Payload);
+	pkt.Payload = 20;
+	memcpy(pkt.Digest,(unsigned char *)(data + 6),20);
 	return pkt;
 }
 
@@ -132,9 +136,9 @@ PKT_END dmk_pkt_end(char data[]){
 char* mk_pkt_data(char data[],PKT_DATA *pkt,int id){
 	char Pkt[1010];
 	pkt->Header = DATA;
-	pkt->Payload = sizeof(data);
+	pkt->Payload = strlen(data);
 	pkt->pkt_id = id;
-	memcpy(pkt->Data,data,sizeof(data));
+	memcpy(pkt->Data,data,strlen(data));
 	sprintf(Pkt ,"%d", pkt->Header);
 	sprintf(Pkt+2,"%d",pkt->Payload);
 	sprintf(Pkt+6,"%d",pkt->pkt_id);
@@ -151,15 +155,15 @@ PKT_DATA dmk_pkt_data(char data[]){
 	return pkt;
 }
 
-int mk_digest(char* path, unsigned char *digest){
+int mk_digest(char* path,unsigned char *digest){
 
 	//int i;
 	//unsigned char rbuff[]="SHA-1 Clear Text";
-	unsigned char wbuff[20];
+	unsigned char wbuff[20] = {};
 	SHA_CTX	c;
-
+	const int bufsize = READ_SIZE;	
 	char *buffer = NULL;
-	const int bufsize = READ_SIZE;
+
 	int bytes_read = 0;
 
 	FILE *inpfile = fopen(path, "rb");
@@ -169,7 +173,7 @@ int mk_digest(char* path, unsigned char *digest){
 	}
 
 	buffer = (char*)malloc(bufsize);
-	//memset(wbuff,0,sizeof(wbuff));
+	memset(wbuff,0,sizeof(wbuff));
 	if (!buffer) {
 		printf("malloc failed\n");
 		fclose(inpfile);
@@ -183,14 +187,15 @@ int mk_digest(char* path, unsigned char *digest){
 
 	//printf("Clear text: %s\n",rbuff);
 	printf("SHA-1 digest:");
-	for (int i=0;i<sizeof(digest);i++)
+	for (int i = 0;i<sizeof(digest);i++)
 		printf("%x",wbuff[i]);
 	printf("\n");
+
+	memcpy(digest,wbuff,20);
 
 	fclose(inpfile);
 	free(buffer);
 
-	memcpy(digest,wbuff,20);
 	return 0;
 }
 
@@ -228,7 +233,7 @@ void datadec(char *cdata, char *decdata, const_DES_cblock IV){
 	const_DES_cblock iv ;
 	copyValue(IV,iv,sizeof(const_DES_cblock));
 	DES_LONG data[2] = {0,0},temp1[2],temp2[2];
-	for(int i=0;i<sizeof(cdata)+8;i=i+8){
+	for(int i = 0;i<strlen(cdata);i = i + 8){
 		memcpy(data,cdata + i,8);
 		memcpy(temp1, data, 2*sizeof(DES_LONG));
 		DES_encrypt1(data,&key,DEC);
@@ -238,6 +243,7 @@ void datadec(char *cdata, char *decdata, const_DES_cblock IV){
 		data[0]=0;data[1]=0; 
 	}
 }
+
 
 
 int main(int argc, char* argv[])
@@ -256,15 +262,25 @@ int main(int argc, char* argv[])
 		WSACleanup( ); 
 		return -1; 
 	} 
+
 	SOCKET sockCli = socket(AF_INET,SOCK_DGRAM,0); 
 	SOCKADDR_IN addrSrv; 
 	addrSrv.sin_family = AF_INET; 
-	addrSrv.sin_port = htons(5050); //端口号
+	addrSrv.sin_port = htons(9877); //端口号
 	addrSrv.sin_addr.S_un.S_addr = inet_addr("127.0.0.1"); //服务器假设为本机
+
 	char *recvBuf = (char*)malloc(1010); 
 	char *sendBuf = (char*)malloc(1010); 
+	/*
+	char recvBuf[1010]; 
+	char sendBuf[1010]; 
+	char *rBuf = (char*)malloc(1010); 
+	char *sBuf = (char*)malloc(1010); 
+	*/
+	memset(recvBuf,0,1010);
+	memset(sendBuf,0,1010);
 	FILE *recvFile = fopen("decfile.txt","wb");
-	FILE *sendFile;// = fopen("test.txt","rb");
+	FILE *sendFile ;//= fopen("test.txt","rb");
 	char *password = "thisispasswordandyouarewrite";
 	int len = sizeof(SOCKADDR); 
 	int ret;
@@ -272,18 +288,22 @@ int main(int argc, char* argv[])
 
 	int keycheck;
 	const_DES_cblock cbc_key = {0x40,0xfe,0xdf,0x38,0x6d,0xa1,0x3d,0x57};
-	const_DES_cblock IV = {0xfe,0xdc,0xba,0x98,0x76,0x54,0x32,0x10};
+	const_DES_cblock IV		 = {0xfe,0xdc,0xba,0x98,0x76,0x54,0x32,0x10};
 	if ((keycheck = DES_set_key_checked(&cbc_key,&key)) != 0)
 			{printf("\n生成密钥不符合要求！\n");return 0;}
 
 	cout << "发送连接请求......" << endl;
-
+	
 	PKT_LOG *join_req = (struct PKT_LOG *)malloc(sizeof(struct PKT_LOG));
-	sendBuf = mk_pkt_log(join_req,JOIN_REQ); 
+	sendBuf = mk_pkt_log(join_req,JOIN_REQ); ;
+	cout<<sendBuf<<endl;
 	//发送JOIN_REQ
-	sendto(sockCli, sendBuf, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
+	sendto(sockCli, sendBuf, 1010, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 	//接受PASS_REQ
-	while( ret = recvfrom(sockCli, recvBuf, 1010, 0, (SOCKADDR*)&addrSrv, &len)){
+	cout<<sendBuf<<endl;
+	recvfrom(sockCli, recvBuf, 1010, 0, (SOCKADDR*)&addrSrv, &len);
+	
+	while( recvBuf[0] != 0){
 		//发送PASS_RESP
 		switch(recvBuf[0] - 48 ){
 		case JOIN_REQ:{
@@ -294,8 +314,7 @@ int main(int argc, char* argv[])
 			break;
 		case PASS_REQ:{
 			PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
-			//char *pwd = (char*)malloc(50);
-			char *pwd = "thisispasswordandyouarewrite";
+			char *pwd = (char*)malloc(50);
 			sendBuf = mk_pkt_pwd(pwd,pass_resp);
 			sendto(sockCli, sendBuf, 6 + strlen(sendBuf+6), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 					  }//接收PASS_ACCEPT
@@ -311,8 +330,7 @@ int main(int argc, char* argv[])
 			}
 			else{
 				PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
-				//char *pwd = (char*)malloc(50);
-				char *pwd = "thisispasswordandyouarewrite";
+				char *pwd = (char*)malloc(50);
 				sendBuf = mk_pkt_pwd(pwd,pass_resp);
 				sendto(sockCli, sendBuf, 6 + strlen(sendBuf+6), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 			}
@@ -333,8 +351,8 @@ int main(int argc, char* argv[])
 				sendBuf = mk_pkt_log(pass_accept,PASS_ACCEPT);
 				sendto(sockCli, sendBuf, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 				int count;
-				char mdata[1000];
-				char encdata[1000];
+				char mdata[1000]   = {};
+				char encdata[1000] = {};
 				int id = 1;
 				while ((count = fread(mdata, 1, 1000, sendFile)) > 0){
 					PKT_DATA *pkt_data  = (struct PKT_DATA *)malloc(sizeof(struct PKT_DATA));	
@@ -344,11 +362,11 @@ int main(int argc, char* argv[])
 					id ++;
 				}
 				//结束时发送摘要
-				char* path = "test.txt"; unsigned char digest[20] ;
+				char* path = "test.txt"; unsigned char digest[20] = {} ;
 				mk_digest(path,digest);
 				PKT_END *pkt_end  = (struct PKT_END *)malloc(sizeof(struct PKT_END));
-				sendBuf = mk_pkt_end((char *)digest,pkt_end);
-				sendto(sockCli,sendBuf,strlen(sendBuf)+1,0,(SOCKADDR*)&addrSrv,len); 
+				sendBuf = mk_pkt_end(digest,pkt_end);
+				sendto(sockCli,sendBuf,26,0,(SOCKADDR*)&addrSrv,len); 
 			}
 			if(passcount > 3){
 				printf("连续三次输错密码，服务器关闭\n");
@@ -359,10 +377,10 @@ int main(int argc, char* argv[])
 					   }
 			break;
 		case TERMINATE:{
-			char* decfilepath = "decfile.txt"; unsigned char decfiledigest[20];
+			char* decfilepath = "decfile.txt";unsigned char decfiledigest[20] = {};
 			mk_digest(decfilepath,decfiledigest);
 			PKT_END terminate = dmk_pkt_end(recvBuf);
-			if(strcmp((char *)decfiledigest,terminate.Digest)){
+			if(memcmp(decfiledigest,terminate.Digest,20)){
 				printf("解密文件的摘要和传输过来的不同\n");
 			}
 			else{
@@ -372,7 +390,7 @@ int main(int argc, char* argv[])
 			break;
 		case DATA:{
 			PKT_DATA pkt_data = dmk_pkt_data(recvBuf);
-			char decdata[1000];
+			char decdata[1000] = {};
 			datadec(pkt_data.Data,decdata,IV);
 			fwrite(decdata,1,pkt_data.Payload,recvFile);
 				  }
@@ -380,8 +398,9 @@ int main(int argc, char* argv[])
 		default:
 			break;
 		}
+		recvfrom(sockCli, recvBuf, 1010, 0, (SOCKADDR*)&addrSrv, &len);
 	}
 	closesocket(sockCli);
-	WSACleanup( ); 
+	WSACleanup(); 
 	return 0;
 } 
