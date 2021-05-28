@@ -20,8 +20,8 @@ using namespace std;
 #include <stdio.h>
 #include <memory.h>
 
-#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib") 
-#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib")
+#pragma comment(lib, "libeay32.lib") 
+#pragma comment(lib, "ssleay32.lib")
 
 
 #define READ_SIZE 32768
@@ -75,6 +75,7 @@ int str2int(char *str){
 	return number;
 }
 
+//向8对齐，用于加解密时复制超过length的数据
 int mod8(int num){
 	if(num%8 == 0)
 		return num;
@@ -162,6 +163,8 @@ PKT_DATA dmk_pkt_data(char data[]){
 	memcpy(pkt.Data,data+10,mod8(pkt.Payload));
 	return pkt;
 }
+
+//用sha1计算文件的摘要，20个字节
 int mk_digest(char* path,unsigned char *digest){
 
 	unsigned char wbuff[20] = {};
@@ -216,8 +219,7 @@ void LongXor(DES_LONG *xor, DES_LONG* data, const_DES_cblock iv) {
     }
 }
 
-
-
+// 对字符串数据进行cbcdes解密
 void dataenc(char *mdata, char *encdata, const_DES_cblock IV, int length){
 	const_DES_cblock iv ;
 	copyValue(IV,iv,sizeof(const_DES_cblock));
@@ -232,6 +234,7 @@ void dataenc(char *mdata, char *encdata, const_DES_cblock IV, int length){
 	}
 }
 
+// 对字符串数据进行cbcdes解密
 void datadec(char *cdata, char *decdata, const_DES_cblock IV, int length){
 	const_DES_cblock iv ;
 	copyValue(IV,iv,sizeof(const_DES_cblock));
@@ -276,23 +279,23 @@ int main(int argc, char* argv[])
 		closesocket(sockSrv);
 		WSACleanup();
 		return -1;
-    }
+	}
 	SOCKADDR_IN addrCli;  //用户保存客户端地址
 
 	//char *recvBuf = (char*)malloc(1010); 
 	//char *sendBuf = (char*)malloc(1010); 
 	FILE *recvFile ;//= fopen("decfile.txt","wb");
-	FILE *sendFile = fopen("text.txt","rb");
-	FILE *decFile = fopen("dectext.txt","wb");
+	FILE *sendFile = fopen("text.txt","rb");	//要发送的文件，应该设置成argv[]
+	FILE *decFile = fopen("dectext.txt","wb");	//调试时用来判断解密是否正确的文件，可忽略
 
-	char *password = "thisispasswordandyouarewrite";
+	char *password = "thisispasswordandyouarewrite";//调试时预设的密码，应该为argv[]
 	int len = sizeof(SOCKADDR); 
 	int ret;
 	int passcount = 1;
 
 	int keycheck;
 	const_DES_cblock cbc_key = {0x40,0xfe,0xdf,0x38,0x6d,0xa1,0x3d,0x57};
-	const_DES_cblock IV		 = {0xfe,0xdc,0xba,0x98,0x76,0x54,0x32,0x10};
+	const_DES_cblock IV	 = {0xfe,0xdc,0xba,0x98,0x76,0x54,0x32,0x10};
 	if ((keycheck = DES_set_key_checked(&cbc_key,&key)) != 0)
 			{printf("\n生成密钥不符合要求！\n");return 0;}
 
@@ -303,17 +306,17 @@ int main(int argc, char* argv[])
 	//发送JOIN_REQ
 	//sendto(sockCli, sendBuf, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 	//recvfrom(sockSrv,recvBuf,200,0,(SOCKADDR*)&addrCli,&len); 
-	//接受PASS_REQ
-
+	
+	//等待接受JOIN_REQ
 	recvfrom(sockSrv, recvBuff, 1010, 0, (SOCKADDR*)&addrCli, &len);
 
 	while( recvBuff[0] != 0){
-		//发送PASS_RESP
 		switch(recvBuff[0] - 48 ){
 		case JOIN_REQ:{
 			PKT_LOG * pass_req = (struct PKT_LOG *)malloc(sizeof(struct PKT_LOG));
 			//sendBuf = 
 			mk_pkt_log(pass_req,PASS_REQ);
+			//发送PASS_REQ，要求密码
 			sendto(sockSrv, sendBuff, 6, 0, (SOCKADDR*)&addrCli, sizeof(SOCKADDR));
 			memset(sendBuff, 0, sizeof(sendBuff));
 					  }
@@ -323,6 +326,7 @@ int main(int argc, char* argv[])
 			char *pwd = "thisispasswordandyouarewrite" ;//(char*)malloc(50);
 			//sendBuf = 
 			mk_pkt_pwd(pwd,pass_resp);
+			//发送PASS_RESP，回复密码
 			sendto(sockSrv, sendBuff, 6 + strlen(sendBuff+6), 0, (SOCKADDR*)&addrCli, sizeof(SOCKADDR));
 			memset(sendBuff, 0, sizeof(sendBuff));
 					  }//接收PASS_ACCEPT
@@ -338,13 +342,14 @@ int main(int argc, char* argv[])
 			}
 			else{
 				PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
-				char *pwd = "thisispasswordandyouarewrite";//(char*)malloc(50);
+				char *pwd = "thisispasswordandyouarewrite";//预设，应为argv[]
 				//sendBuf = 
+				//接受到REJECT，发送第二个及第三个密码
 				mk_pkt_pwd(pwd,pass_resp);
 				sendto(sockSrv, sendBuff, 6 + strlen(sendBuff+6), 0, (SOCKADDR*)&addrCli, sizeof(SOCKADDR));
 				memset(sendBuff, 0, sizeof(sendBuff));
 			}
-					}//接收PASS_ACCEPT
+					}
 			break;
 		case PASS_RESP:{
 			PKT_PWD pkt_pwd = dmk_pkt_pwd(recvBuff) ;
@@ -352,7 +357,7 @@ int main(int argc, char* argv[])
 				printf("密码错误，请重新输入\n");
 				passcount ++;
 				PKT_LOG *reject  = (struct PKT_LOG *)malloc(sizeof(struct PKT_LOG));
-				//sendBuf = 
+				//密码错误，发送REJECT
 				mk_pkt_log(reject,REJECT);
 				sendto(sockSrv, sendBuff, 6, 0, (SOCKADDR*)&addrCli, sizeof(SOCKADDR));
 				memset(sendBuff, 0, sizeof(sendBuff));
@@ -362,12 +367,13 @@ int main(int argc, char* argv[])
 				PKT_LOG *pass_accept  = (struct PKT_LOG *)malloc(sizeof(struct PKT_LOG));
 				//sendBuf = 
 				mk_pkt_log(pass_accept,PASS_ACCEPT);
+				// 发送PASS_ACCEPT，开始传输文件
 				sendto(sockSrv, sendBuff, 6, 0, (SOCKADDR*)&addrCli, sizeof(SOCKADDR));
 				memset(sendBuff, 0, sizeof(sendBuff));
 				int count;
-				char mdata[1000]   = {};
-				char encdata[1000] = {};
-				char decdata[1000] = {};
+				char mdata[1000]   = {}; //明文
+				char encdata[1000] = {}; //加密后
+				char decdata[1000] = {}; //解密后（调试用）
 				int id = 1;
 				while (count = fread(mdata, 1, 1000, sendFile)){
 					PKT_DATA *pkt_data  = (struct PKT_DATA *)malloc((sizeof(struct PKT_DATA)));
@@ -376,7 +382,7 @@ int main(int argc, char* argv[])
 					//datadec(encdata,decdata,IV,count);
 					//fwrite(decdata,1,count,decFile);这里没有问题
 					//sendBuf = 
-					mk_pkt_data(encdata,pkt_data,id,count); //这里有问题了
+					mk_pkt_data(encdata,pkt_data,id,count); //下面解密操作是用来调试时判断解密错误是在传输前还是在传输后
 					PKT_DATA mpkt_data = dmk_pkt_data(sendBuff);
 					datadec(mpkt_data.Data,decdata,IV,mpkt_data.Payload);
 					fwrite(decdata,1,mpkt_data.Payload,decFile);
