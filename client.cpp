@@ -20,8 +20,8 @@ using namespace std;
 #include <stdio.h>
 #include <memory.h>
 
-#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib") 
-#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib")
+#pragma comment(lib, "libeay32.lib") 
+#pragma comment(lib, "ssleay32.lib")
 
 
 #define READ_SIZE 32768
@@ -39,8 +39,8 @@ using namespace std;
 #define ENC 1
 #define DEC 0
 DES_key_schedule key;
-char recvBuff[1010];
-char sendBuff[1010];
+char recvBuff[1010]; //接受缓冲区
+char sendBuff[1010]; //发送缓冲区
 
 // 四种包结构体：登录、密码、结束和数据
 struct PKT_LOG{
@@ -75,6 +75,7 @@ int str2int(char *str){
 	return number;
 }
 
+// 对字符串长度向8对齐，用来8个字节加解密时的处理
 int mod8(int num){
 	if(num%8 == 0)
 		return num;
@@ -164,6 +165,7 @@ PKT_DATA dmk_pkt_data(char data[]){
 	return pkt;
 }
 
+// 用sha1来获取20个字节的digest
 int mk_digest(char* path,unsigned char *digest){
 
 	unsigned char wbuff[20] = {};
@@ -218,6 +220,7 @@ void LongXor(DES_LONG *xor, DES_LONG* data, const_DES_cblock iv) {
     }
 }
 
+// 对字符串进行cbcdes加密
 void dataenc(char *mdata, char *encdata, const_DES_cblock IV, int length){
 	const_DES_cblock iv ;
 	copyValue(IV,iv,sizeof(const_DES_cblock));
@@ -232,6 +235,7 @@ void dataenc(char *mdata, char *encdata, const_DES_cblock IV, int length){
 	}
 }
 
+// 对字符串进行cbcdes解密
 void datadec(char *cdata, char *decdata, const_DES_cblock IV, int length){
 	const_DES_cblock iv ;
 	copyValue(IV,iv,sizeof(const_DES_cblock));
@@ -282,16 +286,16 @@ int main(int argc, char* argv[])
 	memset(recvBuf,0,1010);
 	memset(sendBuf,0,1010);
 	*/
-	FILE *recvFile = fopen("decfile.txt","wb");
+	FILE *recvFile = fopen("decfile.txt","wb");		//客户端创建接收的文件
 	FILE *sendFile ;//= fopen("text.txt","rb");
-	char *password = "thisispasswordandyouarewrite";
+	char *password = "thisispasswordandyouarewrite";	//密码（调试时的预先设置的）
 	int len = sizeof(SOCKADDR); 
 	int ret;
 	int passcount = 1;
 
 	int keycheck;
 	const_DES_cblock cbc_key = {0x40,0xfe,0xdf,0x38,0x6d,0xa1,0x3d,0x57};
-	const_DES_cblock IV		 = {0xfe,0xdc,0xba,0x98,0x76,0x54,0x32,0x10};
+	const_DES_cblock IV	 = {0xfe,0xdc,0xba,0x98,0x76,0x54,0x32,0x10};
 	if ((keycheck = DES_set_key_checked(&cbc_key,&key)) != 0)
 			{printf("\n生成密钥不符合要求！\n");return 0;}
 
@@ -309,12 +313,12 @@ int main(int argc, char* argv[])
 	recvfrom(sockCli, recvBuff, 1010, 0, (SOCKADDR*)&addrSrv, &len);
 	
 	while( recvBuff[0] != 0){
-		//发送PASS_RESP
 		switch(recvBuff[0] - 48 ){
 		case JOIN_REQ:{
 			PKT_LOG * pass_req = (struct PKT_LOG *)malloc(sizeof(struct PKT_LOG));
 			//sendBuf = 
 			mk_pkt_log(pass_req,PASS_REQ);
+			//发送PASS_REQ
 			sendto(sockCli, sendBuff, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 			memset(sendBuff, 0, sizeof(sendBuff));
 					  }
@@ -323,6 +327,7 @@ int main(int argc, char* argv[])
 			PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
 			char *pwd = "thisispasswordandyouarewrite" ;//(char*)malloc(50);
 			//sendBuf = 
+			//发送PASS_RESP
 			mk_pkt_pwd(pwd,pass_resp);
 			sendto(sockCli, sendBuff, 6 + strlen(sendBuff+6), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 			memset(sendBuff, 0, sizeof(sendBuff));
@@ -339,13 +344,14 @@ int main(int argc, char* argv[])
 			}
 			else{
 				PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
-				char *pwd = "thisispasswordandyouarewrite"; //(char*)malloc(50);
+				char *pwd = "thisispasswordandyouarewrite"; // 应该修改成参数的argv[]
 				//sendBuf = 
+				//发送第二个和第三个密码
 				mk_pkt_pwd(pwd,pass_resp);
 				sendto(sockCli, sendBuff, 6 + strlen(sendBuff+6), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 				memset(sendBuff, 0, sizeof(sendBuff));
 			}
-					}//接收PASS_ACCEPT
+					}
 			break;
 		case PASS_RESP:{
 			PKT_PWD pkt_pwd = dmk_pkt_pwd(recvBuff) ;
@@ -355,6 +361,7 @@ int main(int argc, char* argv[])
 				PKT_LOG *reject  = (struct PKT_LOG *)malloc(sizeof(struct PKT_LOG));
 				//sendBuf = 
 				mk_pkt_log(reject,REJECT);
+				//错误发送REJECT
 				sendto(sockCli, sendBuff, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 				memset(sendBuff, 0, sizeof(sendBuff));
 			}
@@ -363,17 +370,19 @@ int main(int argc, char* argv[])
 				PKT_LOG *pass_accept  = (struct PKT_LOG *)malloc(sizeof(struct PKT_LOG));
 				//sendBuf = 
 				mk_pkt_log(pass_accept,PASS_ACCEPT);
+				//发送PASS_ACCEPT，之后开始发送数据
 				sendto(sockCli, sendBuff, 6, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 				memset(sendBuff, 0, sizeof(sendBuff));
 				int count;
 				char mdata[1000]   = {};
 				char encdata[1000] = {};
 				int id = 1;
+				//发送进行加密过后的数据
 				while ((count = fread(mdata, 1, 1000, sendFile)) > 0){
 					PKT_DATA *pkt_data  = (struct PKT_DATA *)malloc(sizeof(struct PKT_DATA));	
-					dataenc(mdata,encdata,IV,count);
+					dataenc(mdata,encdata,IV,count); //进行加密
 					//sendBuf = 
-					mk_pkt_data(encdata,pkt_data,id,count);
+					mk_pkt_data(encdata,pkt_data,id,count); //将加密数据打包发送
 					sendto(sockCli, sendBuff, 1010, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 					memset(sendBuff, 0, sizeof(sendBuff));
 					id ++;
@@ -397,6 +406,7 @@ int main(int argc, char* argv[])
 					   }
 			break;
 		case TERMINATE:{
+			//接受到TERMINATE包，对比和解密后得到的文件，摘要是否相同
 			fclose(recvFile);
 			char* decfilepath = "decfile.txt";unsigned char decfiledigest[20] = {};
 			mk_digest(decfilepath,decfiledigest);
@@ -412,6 +422,7 @@ int main(int argc, char* argv[])
 					   }
 			break;
 		case DATA:{
+			//接受到DATA包，解密后写到文件中
 			PKT_DATA pkt_data = dmk_pkt_data(recvBuff);
 			char decdata[1000] = {};
 			datadec(pkt_data.Data,decdata,IV,pkt_data.Payload);
