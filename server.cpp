@@ -1,7 +1,7 @@
 /*
 author:朱一鸣
 date:2021/05/21
-description:微型安全协议的客户端程序
+description:微型安全协议的服务器端程序
 */
 
 #include <iostream>
