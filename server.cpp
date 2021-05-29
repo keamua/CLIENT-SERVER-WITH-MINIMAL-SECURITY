@@ -432,7 +432,7 @@ int main(int argc, char* argv[])
 		default:
 			break;
 		}
-		//memset(recvBuff, 0, sizeof(sendBuff));
+		memset(recvBuff, 0, sizeof(sendBuff));
 		recvfrom(sockSrv, recvBuff, 1010, 0, (SOCKADDR*)&addrCli, &len);
 	}
 	closesocket(sockSrv);
