@@ -1,6 +1,62 @@
 # CLIENT-SERVER-WITH-MINIMAL-SECURITY  
 # 客户端-服务器 微型安全协议  
 NKU2021春季算法安全协议第三次作业  
+## configue
+## 配置openssl
+     
+open VC－Tools-Options-Directores，at “Include files” to append "\openssl\include”；at “Libray files” to append “\openssl\lib”    
+in cpp append these header LIB：    
+
+#include <openssl/ssl.h>    
+#include <openssl/err.h>   
+#include <openssl/bio.h>   
+#pragma comment(lib, "libeay32.lib")     
+
+#pragma comment(lib, "ssleay32.lib")    
+
+
+## How to use
+## 使用方法
+例子：
+在服务端用命令行输入： .\server-ms.exe 9877 123456 text.txt  
+在客户端用命令行输入： .\client-ms.exe 127.0.0.1 9877 1234567 1234568 123456 textrec1.txt  
+
+输出结果：  
+服务端：  
+等待连接......  
+密码错误，请重新输入  
+密码错误，请重新输入  
+密码正确，开始发送数据  
+SHA-1 digest:d1a0c33e3ef4aa4ebe3d5c50914535378ff43c19   
+客户端：  
+发送连接请求......  
+发送下一个密码:1234568  
+发送下一个密码:123456  
+密码验证通过，开始接受文件……  
+SHA-1 digest:d1a0c33e3ef4aa4ebe3d5c50914535378ff43c19  
+接受到正确的文件  
+  
+e.g.  
+input in cmd :  
+server: .\server-ms.exe 9877 123456 text.txt    
+clent:  .\client-ms.exe 127.0.0.1 9877 1234567 1234568 123456 textrec1.txt   
+
+output:  
+server：  
+waiting for connect......  
+wrong password, input another one;  
+wrong password, input another one;  
+right password, sending file; 
+SHA-1 digest:d1a0c33e3ef4aa4ebe3d5c50914535378ff43c19   
+client：  
+asking connect ......  
+send the next password:1234568  
+send the next password:123456  
+access the password,accepting file 密码验证通过，开始接受文件……  
+SHA-1 digest:d1a0c33e3ef4aa4ebe3d5c50914535378ff43c19  
+accept the right file   
+
+
 ## FEATURES  
 ## 特性  
 Server – Client application:   
