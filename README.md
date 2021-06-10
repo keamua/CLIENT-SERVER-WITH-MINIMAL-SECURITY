@@ -1,9 +1,13 @@
 # CLIENT-SERVER-WITH-MINIMAL-SECURITY  
 # 客户端-服务器 微型安全协议  
 NKU2021春季算法安全协议第三次作业  
+个人实验环境：VS2010
 ## configue
 ## 配置openssl
      
+在项目右键属性，VC++目录，里面的包含文件夹和lib文件夹，添加老师给的openssl里面的include和lib文件夹。  
+在代码中用#pragma comment链接到bin里面的两个文件，"libeay32.lib"和"ssleay32.lib"。即可
+
 open VC－Tools-Options-Directores，at “Include files” to append "\openssl\include”；at “Libray files” to append “\openssl\lib”    
 in cpp append these header LIB：    
 
@@ -11,7 +15,6 @@ in cpp append these header LIB：
 #include <openssl/err.h>   
 #include <openssl/bio.h>   
 #pragma comment(lib, "libeay32.lib")     
-
 #pragma comment(lib, "ssleay32.lib")    
 
 
@@ -38,7 +41,7 @@ SHA-1 digest:d1a0c33e3ef4aa4ebe3d5c50914535378ff43c19
   
 e.g.  
 input in cmd :  
-server: .\server-ms.exe 9877 123456 text.txt    
+server: .\server-ms.exe 9877 123456 text.txt   
 clent:  .\client-ms.exe 127.0.0.1 9877 1234567 1234568 123456 textrec1.txt   
 
 output:  
@@ -78,13 +81,13 @@ d. The server will verify the password and in case the password is correct, the 
 e. In case the password is incorrect, the server sends a PASS_REQ packet again to the client. The PASS_REQ packet will be retransmitted at most three times. After the third time, the server sends a REJECT message to the client. The client closes the session, and the server exits as well.   
 f. Once the server transmits the PASS_ACCEPT packet to the client, the server begins transmitting the file using DATA packets. The file is broken into several segments (depending on the size of the file), and each segment is transmitted using a DATA packet.   
 g. When the server completes sending the file, it will transmit a TERMINATE packet which marks the end of the file download. Included in this packet, there is a file digest (SHA1 digest) that the client will use to verify the integrity of the received file.   
-a客户端发送一个JOIN_REQ数据包来启动与服务器的通信。  
-b服务器用PASS_REQ数据包响应，这是对用户要求密码输入。  
-c客户端将向服务器发送PASS_RESP数据包，其中包括密码   
-d服务器将验证密码，如果密码正确，服务器将向客户端发送PASS_ACCEPT数据包。  
-e如果密码不正确，服务器会再次向客户。PASS_REQ数据包最多重传三次。之后第三次，服务器向客户端发送拒绝消息。客户端关闭会话，服务器也会退出。  
-f一旦服务器将PASS_ACCEPT数据包传输到客户机，服务器就开始了使用数据包传输文件。文件被分成几个部分（取决于文件的大小），并且每个段都使用数据包。  
-g当服务器发送完文件后，它将发送一个终止包，这标志着文件下载的结束。在这个包中，有一个文件摘要（SHA1 digest）客户端将用来验证所接收文件的完整性。  
+a.客户端发送一个JOIN_REQ数据包来启动与服务器的通信。  
+b.服务器用PASS_REQ数据包响应，这是对用户要求密码输入。  
+c.客户端将向服务器发送PASS_RESP数据包，其中包括密码   
+d.服务器将验证密码，如果密码正确，服务器将向客户端发送PASS_ACCEPT数据包。  
+e.如果密码不正确，服务器会再次向客户。PASS_REQ数据包最多重传三次。之后第三次，服务器向客户端发送拒绝消息。客户端关闭会话，服务器也会退出。  
+f.一旦服务器将PASS_ACCEPT数据包传输到客户机，服务器就开始了使用数据包传输文件。文件被分成几个部分（取决于文件的大小），并且每个段都使用数据包。  
+g.当服务器发送完文件后，它将发送一个终止包，这标志着文件下载的结束。在这个包中，有一个文件摘要（SHA1 digest）客户端将用来验证所接收文件的完整性。  
  
 
 ## Assumptions   
@@ -104,22 +107,22 @@ a. All packets have a 2 byte packet type, and 4 byte payload length.
 b. The packet types are as follows: JOIN_REQ: 1, PASS_REQ: 2, PASS_RESP: 3, PASS_ACCEPT: 4, DATA: 5, TERMINATE: 6, REJECT: 7   
 c. For the JOIN_REQ, PASS_REQ, PASS_ACCEPT and REJECT messages, the payload length is 0. For the PASS_RESP message, the payload length is the length of the password, for the TERMINATE message, the payload length is the length of the SHA digest, and for the DATA packet, the payload length is the number of bytes of the data segment you are transmitting.   
 d. Note that the payload length of DATA does not include the packet ID.   
-a 所有的包用两个字节来表示类型，4个字节表示负载长度  
-b 有下面的这些类型JOIN_REQ: 1, PASS_REQ: 2, PASS_RESP: 3, PASS_ACCEPT: 4, DATA: 5, TERMINATE: 6, REJECT: 7   
-c 对于JOIN_REQ, PASS_REQ, PASS_ACCEPT 和REJECT这四种包，负载长度为0，对于PASS_RESP包，负载长度是密码的长度，对于TERMINATE包是SHA摘要的长度，对于DATA包，负载长度是正在传输的数据段的字节数  
-d 注意DATA类型的包的负载长度不包括包的id。  
+a. 所有的包用两个字节来表示类型，4个字节表示负载长度  
+b. 有下面的这些类型JOIN_REQ: 1, PASS_REQ: 2, PASS_RESP: 3, PASS_ACCEPT: 4, DATA: 5, TERMINATE: 6, REJECT: 7   
+c. 对于JOIN_REQ, PASS_REQ, PASS_ACCEPT 和REJECT这四种包，负载长度为0，对于PASS_RESP包，负载长度是密码的长度，对于TERMINATE包是SHA摘要的长度，对于DATA包，负载长度是正在传输的数据段的字节数  
+d. 注意DATA类型的包的负载长度不包括包的id。  
  
 ## Command Line Arguments:    
 ## 命令行参数     
   
 Your server and client code must be executed from the command line as follows:   
 设计的服务器端和客户端代码必须能够按照下面的命令行进行执行  
-./server <server port> <password> <input file>   
+`./server <server port> <password> <input file>   `
 
 The password corresponds to the correct password the client has to transmit in order for the server to consider a valid login. The input file is the path to the file that the server will send to the client.   
 密码对应于客户端必须传输的正确密码，以便服务器考虑有效登录。输入文件是服务器将发送到客户端的文件的路径。  
 
-./client <server name> <server port> <clientpwd1> <clientpwd2> <clientpwd3> <output file>   
+`./client <server name> <server port> <clientpwd1> <clientpwd2> <clientpwd3> <output file> `
 
 The three passwords correspond to the passwords used in each of the three attempts the client uses to login. Note that once a correct password is transmitted, no further login attempts are needed and the remaining password entries are ignored. The output file argument is the file name to assign to the file the server will send to the client.   
 这三个密码对应于客户端三次登录尝试中每次使用的密码。请注意，一旦传输了正确的密码，就不需要再次尝试登录，其余的密码条目将被忽略。output file参数是要分配给服务器将发送给客户端的文件的文件名。  
