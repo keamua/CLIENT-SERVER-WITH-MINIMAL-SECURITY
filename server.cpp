@@ -221,12 +221,12 @@ void dataenc(char *mdata, char *encdata, const_DES_cblock IV, int length){
 	copyValue(IV,iv,sizeof(const_DES_cblock));	//局部变量iv，防止改变解密时的iv
 	DES_LONG data[2] = {0,0},temp[2] = {0,0};	//加密数据和中间量
 	for( int i = 0 ; i < length ;i = i+8){
-		memcpy(data, mdata + i, 8);		//把第i块（8个字节）的明文给data，进行加密
-		LongXor(temp, data, iv);		//与iv异或得到temp
-		DES_encrypt1(temp,&key,ENC);		//对temp进行加密
-		memcpy(encdata + i,temp,8);		//把加密结果写到第i块密文
+		memcpy(data, mdata + i, 8);				//把第i块（8个字节）的明文给data，进行加密
+		LongXor(temp, data, iv);				//与iv异或得到temp
+		DES_encrypt1(temp,&key,ENC);			//对temp进行加密
+		memcpy(encdata + i,temp,8);				//把加密结果写到第i块密文
 		memcpy(iv, temp, 2*sizeof(DES_LONG));	//把密文复制到iv用于下一轮加密
-		data[0]=0;data[1]=0;			//清零
+		data[0]=0;data[1]=0;					//清零
 	}
 }
 
@@ -236,11 +236,11 @@ void datadec(char *cdata, char *decdata, const_DES_cblock IV, int length){
 	copyValue(IV,iv,sizeof(const_DES_cblock));	
 	DES_LONG data[2] = {0,0},temp1[2],temp2[2];
 	for( int i = 0 ; i < length ;i = i+8){
-		memcpy(data,cdata + i,8);		//把密文复制给data进行解密
+		memcpy(data,cdata + i,8);				//把密文复制给data进行解密
 		memcpy(temp1, data, 2*sizeof(DES_LONG));//保存到temp1，作为下一次的iv
-		DES_encrypt1(data,&key,DEC);		//解密到data
-		LongXor(temp2, data, iv);		//data和iv异或得到明文temp2
-		memcpy(decdata + i ,temp2,8);		//明文保存下来
+		DES_encrypt1(data,&key,DEC);			//解密到data
+		LongXor(temp2, data, iv);				//data和iv异或得到明文temp2
+		memcpy(decdata + i ,temp2,8);			//明文保存下来
 		memcpy(iv, temp1, 2*sizeof(DES_LONG));	//保留的密文作为iv给下一轮解密
 		data[0]=0;data[1]=0; 
 	}
@@ -248,7 +248,13 @@ void datadec(char *cdata, char *decdata, const_DES_cblock IV, int length){
 
 
 int main(int argc, char* argv[])
-{ 
+{
+	if (argc != 4) {
+		cerr << "Usage: " << argv[0] << " <Server Port> <Password> <input file>" << endl;
+		exit(1);
+	}
+	int serverPort = atoi(argv[1]);//端口号
+
 	// 设置socket有关信息
 	WORD wVersionRequested; 
 	WSADATA wsaData; 
@@ -266,7 +272,7 @@ int main(int argc, char* argv[])
 	SOCKET sockSrv = socket(AF_INET,SOCK_DGRAM,0); 
 	SOCKADDR_IN addrSrv; 
 	addrSrv.sin_family = AF_INET; 
-	addrSrv.sin_port = htons(9877); //端口号，应该为argv[]
+	addrSrv.sin_port = htons(serverPort); //端口号，应该为argv[1]
 	addrSrv.sin_addr.S_un.S_addr = htonl(INADDR_ANY); //服务器假设为本机
 
 	if (bind(sockSrv, (sockaddr *)&addrSrv, sizeof(SOCKADDR)) == SOCKET_ERROR)
@@ -279,21 +285,19 @@ int main(int argc, char* argv[])
 	SOCKADDR_IN addrCli;  //用户保存客户端地址
 
 	FILE *recvFile ;//= fopen("decfile.txt","wb");
-	FILE *sendFile = fopen("text.txt","rb");	//要发送的文件，应该设置成argv[]
+	FILE *sendFile = fopen(argv[3],"rb");	//要发送的文件，应该设置成argv[3]
 	if (!sendFile) {
-		printf("can not open, there is no this file %s\n", "text.txt");
+		printf("can not open, there is no this file %s\n", argv[3]);
 		return -1;
 	}
 
-	FILE *decFile = fopen("dectext.txt","wb");	//调试时用来判断解密是否正确的文件，可忽略
-
-	char *password = "thisispasswordandyouarewrite";//调试时预设的密码，应该为argv[]
+	char *password = argv[2];//调试时预设的密码，应该为argv[2]
 	int len = sizeof(SOCKADDR);
 	int passcount = 1;	//计算错误密码次数
 	int idcount = 1;	//计算接到的包的id
 	int keycheck;
 	const_DES_cblock cbc_key = {0x40,0xfe,0xdf,0x38,0x6d,0xa1,0x3d,0x57};
-	const_DES_cblock IV	 = {0xfe,0xdc,0xba,0x98,0x76,0x54,0x32,0x10};
+	const_DES_cblock IV		 = {0xfe,0xdc,0xba,0x98,0x76,0x54,0x32,0x10};
 	if ((keycheck = DES_set_key_checked(&cbc_key,&key)) != 0)
 			{printf("\n生成密钥不符合要求！\n");return 0;}
 
@@ -315,7 +319,7 @@ int main(int argc, char* argv[])
 			break;
 		case PASS_REQ:{
 			PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
-			char *pwd = "thisispasswordandyouarewrite" ;//(char*)malloc(50);
+			char *pwd = argv[3] ;//密码1，应该为argv[3];
 			mk_pkt_pwd(pwd,pass_resp);
 			//发送PASS_RESP，回复密码
 			sendto(sockSrv, sendBuff, 6 + strlen(sendBuff+6), 0, (SOCKADDR*)&addrCli, sizeof(SOCKADDR));
@@ -333,13 +337,24 @@ int main(int argc, char* argv[])
 				printf("三次密码均失败，断开连接……\n");
 			}
 			else{
-				PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
-				char *pwd = "thisispasswordandyouarewrite";//预设，应为argv[]
-				//接受到REJECT，发送第二个及第三个密码
+				PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD));
+				char *pwd;
+
+				if (argc > 5 && passcount == 2 ){
+					pwd = argv[4];//第二个密码，应为argv[4];
+				}
+				else if(argc == 7 && passcount == 3){
+					pwd = argv[5];//第三个密码，应为argv[5]
+				}
+				else{
+					cout<<"输入的密码错误！"<<endl;
+					break;
+				}
+				//接受到REJECT，发送第二个或第三个密码
 				mk_pkt_pwd(pwd,pass_resp);
 				sendto(sockSrv, sendBuff, 6 + strlen(sendBuff+6), 0, (SOCKADDR*)&addrCli, sizeof(SOCKADDR));
-				free(pass_resp);
 				memset(sendBuff, 0, sizeof(sendBuff));
+				free(pass_resp);
 			}
 					}
 			break;
@@ -378,7 +393,7 @@ int main(int argc, char* argv[])
 				free(pkt_data);
 				fclose(sendFile);
 				//结束时发送摘要
-				char* path = "text.txt"; unsigned char digest[20] = {} ; //应该为argv[]
+				char* path = argv[3]; unsigned char digest[20] = {} ; //应该为argv[3]
 				mk_digest(path,digest);
 				PKT_END *pkt_end  = (struct PKT_END *)malloc(sizeof(struct PKT_END));
 				mk_pkt_end(digest,pkt_end);
@@ -396,7 +411,8 @@ int main(int argc, char* argv[])
 			break;
 		case TERMINATE:{
 			fclose(recvFile);
-			char* decfilepath = "decfile.txt";unsigned char decfiledigest[20] = {}; //defilepath应该是下载的文件，argv[]
+			char* decfilepath = argv[argc -1];
+			unsigned char decfiledigest[20] = {}; //defilepath应该是下载的文件，argv[]
 			mk_digest(decfilepath,decfiledigest);
 			PKT_END terminate = dmk_pkt_end(recvBuff);
 			if(memcmp(decfiledigest,terminate.Digest,20)){
