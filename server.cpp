@@ -22,8 +22,8 @@ using namespace std;
 #include <stdio.h>
 #include <memory.h>
 
-#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\课件\\大三下\\算法协议\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib")	//通过绝对路径链接到libeay32.lib
-#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\课件\\大三下\\算法协议\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib") //通过绝对路径链接到ssleay32.lib
+#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib") //通过绝对路径链接到libeay32.lib
+#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib") //通过绝对路径链接到ssleay32.lib
 
 #define READ_SIZE 32768
 // 七种数据包
@@ -335,6 +335,9 @@ int main(int argc, char* argv[])
 			passcount++;
 			if(passcount > 3){
 				printf("三次密码均失败，断开连接……\n");
+				closesocket(sockSrv);
+				WSACleanup(); 
+				return 0;
 			}
 			else{
 				PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD));
@@ -384,11 +387,14 @@ int main(int argc, char* argv[])
 				int id = 1;
 				PKT_DATA *pkt_data  = (struct PKT_DATA *)malloc((sizeof(struct PKT_DATA)));
 				while (count = fread(mdata, 1, 1000, sendFile)){
+					memset(pkt_data, 0, sizeof(struct PKT_DATA));
 					dataenc(mdata,encdata,IV,count);
 					mk_pkt_data(encdata,pkt_data,id,count); 
 					sendto(sockSrv, sendBuff, 1010, 0, (SOCKADDR*)&addrCli, sizeof(SOCKADDR));
 					memset(sendBuff, 0, sizeof(sendBuff));
 					id ++;
+					if(id > 9999) 
+						id = 1;//超过一万个包重新开始计数
 				}
 				free(pkt_data);
 				fclose(sendFile);
