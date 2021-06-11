@@ -20,9 +20,11 @@ in cpp append these header LIB：
 
 ## How to use
 ## 使用方法
-例子：
-在服务端用命令行输入： `.\server-ms.exe 9877 123456 text.txt  `
-在客户端用命令行输入： `.\client-ms.exe 127.0.0.1 9877 1234567 1234568 123456 textrec1.txt `   
+例子：  
+在服务端用命令行输入： `.\server-ms.exe 9877 123456 text.txt `
+
+在客户端用命令行输入： `.\client-ms.exe 127.0.0.1 9877 1234567 1234568 123456 textrec1.txt `
+
 
 输出结果：  
 服务端：  
