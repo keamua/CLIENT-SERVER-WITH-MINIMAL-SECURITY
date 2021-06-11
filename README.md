@@ -6,7 +6,8 @@ NKU2021春季算法安全协议第三次作业
 ## 配置openssl
      
 在项目右键属性，VC++目录，里面的包含文件夹和lib文件夹，添加老师给的openssl里面的include和lib文件夹。  
-在代码中用#pragma comment链接到bin里面的两个文件，"libeay32.lib"和"ssleay32.lib"。即可
+在代码中用#pragma comment链接到lib里面的两个文件，"libeay32.lib"和"ssleay32.lib"。  
+将bin里面的两个dll文件放到C:/windows/system32或者system64文件夹。即可
 
 open VC－Tools-Options-Directores，at “Include files” to append "\openssl\include”；at “Libray files” to append “\openssl\lib”    
 in cpp append these header LIB：    
@@ -21,8 +22,7 @@ in cpp append these header LIB：
 ## How to use
 ## 使用方法
 例子：  
-在服务端用命令行输入： `.\server-ms.exe 9877 123456 text.txt `
-
+在服务端用命令行输入： `.\server-ms.exe 9877 123456 text.txt `  
 在客户端用命令行输入： `.\client-ms.exe 127.0.0.1 9877 1234567 1234568 123456 textrec1.txt `
 
 
