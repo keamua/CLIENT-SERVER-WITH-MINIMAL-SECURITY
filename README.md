@@ -22,7 +22,7 @@ in cpp append these header LIB：
 ## 使用方法
 例子：
 在服务端用命令行输入： `.\server-ms.exe 9877 123456 text.txt  `
-在客户端用命令行输入： `.\client-ms.exe 127.0.0.1 9877 1234567 1234568 123456 textrec1.txt ` 
+在客户端用命令行输入： `.\client-ms.exe 127.0.0.1 9877 1234567 1234568 123456 textrec1.txt `   
 
 输出结果：  
 服务端：  
@@ -41,7 +41,7 @@ SHA-1 digest:d1a0c33e3ef4aa4ebe3d5c50914535378ff43c19
   
 e.g.  
 input in cmd :  
-server:` .\server-ms.exe 9877 123456 text.txt `  
+server:` .\server-ms.exe 9877 123456 text.txt `    
 clent:  `.\client-ms.exe 127.0.0.1 9877 1234567 1234568 123456 textrec1.txt   `
 
 output:  
