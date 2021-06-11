@@ -51,7 +51,7 @@ server：
 waiting for connect......  
 wrong password, input another one;  
 wrong password, input another one;  
-right password, sending file; 
+right password, sending file;   
 SHA-1 digest:d1a0c33e3ef4aa4ebe3d5c50914535378ff43c19   
 client：  
 asking connect ......  
