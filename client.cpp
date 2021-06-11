@@ -22,8 +22,8 @@ using namespace std;
 #include <stdio.h>
 #include <memory.h>
 
-#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\课件\\大三下\\算法协议\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib") //通过绝对路径链接到libeay32.lib
-#pragma comment(lib, "C:\\Users\\Administrator\\Desktop\\课件\\大三下\\算法协议\\Ex1\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib") //通过绝对路径链接到ssleay32.lib
+#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\libeay32.lib") //通过绝对路径链接到libeay32.lib
+#pragma comment(lib, "C:\\Users\\Dreaming\\Desktop\\大三下\\Ex1\\openssl-0[1].9.8k_WIN32\\lib\\ssleay32.lib") //通过绝对路径链接到ssleay32.lib
 
 #define READ_SIZE 32768
 // 七种数据包
@@ -338,6 +338,9 @@ int main(int argc, char* argv[])
 			passcount++;
 			if(passcount > 3){
 				printf("三次密码均失败，断开连接……\n");
+				closesocket(sockCli);
+				WSACleanup(); 
+				return 0;
 			}
 			else{
 				PKT_PWD *pass_resp = (struct PKT_PWD *)malloc(sizeof(struct PKT_PWD)); 
@@ -390,11 +393,15 @@ int main(int argc, char* argv[])
 				PKT_DATA *pkt_data  = (struct PKT_DATA *)malloc(sizeof(struct PKT_DATA));	
 				//发送进行加密过后的数据
 				while ((count = fread(mdata, 1, 1000, sendFile)) > 0){
+					memset(pkt_data, 0, sizeof(struct PKT_DATA));
 					dataenc(mdata,encdata,IV,count); //进行加密
 					mk_pkt_data(encdata,pkt_data,id,count); //将加密数据打包发送
 					sendto(sockCli, sendBuff, 1010, 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 					memset(sendBuff, 0, sizeof(sendBuff));
-					id ++;
+					if(id == 9999) 
+						id = 1; //超过一万个包重新开始id计数
+					else
+						id++;
 				}
 				free(pkt_data);
 				fclose(sendFile);
@@ -424,6 +431,9 @@ int main(int argc, char* argv[])
 			PKT_END terminate = dmk_pkt_end(recvBuff);
 			if(memcmp(decfiledigest,terminate.Digest,20)){
 				printf("解密文件的摘要和传输过来的不同！ABORT！\n");
+				closesocket(sockCli);
+				WSACleanup(); 
+				return 0;
 			}
 			else{
 				printf("接受到正确的文件\n");
@@ -438,9 +448,17 @@ int main(int argc, char* argv[])
 		case DATA:{
 			//接受到DATA包，解密后写到文件中
 			PKT_DATA pkt_data = dmk_pkt_data(recvBuff);
-			if(pkt_data.pkt_id != idcount)
-				cout<<"接受到错误的数据包！ABORT！"<<endl;
+			if(pkt_data.pkt_id != idcount){
+				cout<<"接受到错误的数据包！ABORT！ "<<pkt_data.pkt_id<<" "<<idcount<<endl;
+				recvBuff[0] = 0;
+				sendto(sockCli,sendBuff,1,0,(SOCKADDR*)&addrSrv,len); 
+				closesocket(sockCli);
+				WSACleanup(); 
+				return 0;
+			}
 			idcount++;
+			if(idcount > 9999) 
+				idcount = 1;//超过一万个包重新开始计数
 			char decdata[1000] = {};
 			datadec(pkt_data.Data,decdata,IV,pkt_data.Payload);
 			fwrite(decdata,1,pkt_data.Payload,recvFile);
