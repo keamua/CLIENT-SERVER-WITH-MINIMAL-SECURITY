@@ -207,11 +207,11 @@ void copyValue(const_DES_cblock val1, unsigned char *val2, int size) {
 }
 
 // 用两个无符号长字符（4字节），对上次加密结果和这次的明文data进行异或
-void LongXor(DES_LONG *xor, DES_LONG* data, const_DES_cblock iv) {
+void LongXor(DES_LONG *xor1, DES_LONG* data, const_DES_cblock iv) {
 	DES_LONG temp[2];
 	memcpy(temp, iv, 8*sizeof(unsigned char));	// 转换成相同的类型
 	for(int i=0; i<2; i++) {
-		xor[i] = temp[i] ^ data[i];
+		xor1[i] = temp[i] ^ data[i];
 	}
 }
 
